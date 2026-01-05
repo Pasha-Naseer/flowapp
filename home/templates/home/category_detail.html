@@ -1,0 +1,12 @@
+{% extends 'home/base.html' %}
+{% block content %}
+
+    <img src="{{ category.image.url }}">
+    <h1>{{ category.name }}</h1>
+
+
+{% for event in event_list %}
+    <img src="{{ event.image.url }}">
+    <a href="{% url 'home:event_detail' category.id event.id %}"><h1>{{ event.name }}</h1></a>
+{% endfor %}
+{% endblock %}
