@@ -1,10 +1,11 @@
 from django.db import models
-from accounts.models import CustomUser
-
+from flowaccounts.models import User
+#null=True set for CATEGORY.USER
 
 class Category(models.Model):
     name = models.CharField(max_length=200, unique=True)
     image = models.ImageField(default='fallback.png')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
 
     def __str__(self):
         return self.name
@@ -18,13 +19,13 @@ class Event(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     name = models.CharField(max_length=200)
     image = models.ImageField(default='fallback.png')
-    promoter = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    promoter = models.ForeignKey(User, on_delete=models.CASCADE)
     description = models.TextField()
     start_hour = models.TimeField()
     end_hour = models.TimeField()
     event_date = models.DateField()
     participants = models.ManyToManyField(
-        CustomUser,
+        User,
         related_name="events_joined",
         blank=True,
     )

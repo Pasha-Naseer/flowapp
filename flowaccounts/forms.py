@@ -1,6 +1,6 @@
 from django.contrib.auth.forms import SetPasswordForm
 from django import forms
-from accounts.models import User
+from .models import User
 from django.core.exceptions import ValidationError
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.core.validators import MinLengthValidator

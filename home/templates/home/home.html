@@ -1,8 +1,20 @@
 {% extends 'home/base.html' %}
-{% block content %}
+{% load static %}
 
-{% for category in categories %}
-    <img src="{{ category.image.url }}">
-    <a href="{% url 'home:category_detail' category.id %}"><h1>{{ category.name }}</h1></a>
-{% endfor %}
+{% block content %}
+<section class="flovv-explorer container my-4">
+    <div class="row g-3">
+        {% for category in categories %}
+        <div class="col-12 col-sm-6 col-md-4">
+            <a href="{% url 'home:category_detail' category.id %}" class="flovv-card">
+                <div class="flovv-image-wrapper">
+                    <img src="{{ category.image.url }}" alt="{{ category.name }}">
+                    <div class="flovv-overlay"></div>
+                    <h2 class="flovv-title">{{ category.name }}</h2>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</section>
 {% endblock %}

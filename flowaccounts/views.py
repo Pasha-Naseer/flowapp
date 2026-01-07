@@ -2,9 +2,8 @@ import random
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
-from .forms import ChangePasswordForm
 from django.views import View
-from .forms import UserRegistrationForm, VerifyCodeForm,  UserChangeFormUser, UserLoginForm
+from .forms import UserRegistrationForm, VerifyCodeForm,  UserChangeFormUser, UserLoginForm, ChangePasswordForm
 from .models import User
 from datetime import datetime, date, time, timedelta
 from django.utils import timezone
@@ -18,7 +17,7 @@ class UserLoginView(View):
             messages.error(request, 'شما قبلا وارد حساب شده اید')
             return redirect('home:home')
         form = self.form
-        return render(request, 'accounts/login.html', {'form': form})
+        return render(request, 'flowaccounts/login.html', {'form': form})
 
     def post(self, request):
         form = UserLoginForm(request.POST)
@@ -34,17 +33,17 @@ class UserLoginView(View):
                 return redirect("home:home")
             else:
                 messages.error(request, "خطایی در حین ورود به حساب رخ داد")
-                return redirect('accounts:login')
+                return redirect('flowaccounts:login')
 
 
 def user_logout(request):
     if request.user.is_authenticated:
         logout(request)
         messages.success(request, "شما با موفقیت از حساب خارج شدید")
-        return redirect("accounts:login")
+        return redirect("flowaccounts:login")
     else:
         messages.error(request, "برای خروج از حساب باید وارد آن شده باشید.")
-        return redirect('accounts:login')
+        return redirect('flowaccounts:login')
 
 
 class UserRegisterView(View):
@@ -52,7 +51,7 @@ class UserRegisterView(View):
 
     def get(self, request):
         form = self.form_class
-        return render(request, 'accounts/register.html', {'form': form})
+        return render(request, 'flowaccounts/register.html', {'form': form})
 
     def post(self, request):
         form = self.form_class(request.POST)
@@ -73,9 +72,9 @@ class UserRegisterView(View):
                 'password': form.cleaned_data['password'],
             }
             messages.success(request, 'کدی برای شما ارسال شد', 'success')
-            return redirect('accounts:verify_code')
+            return redirect('flowaccounts:verify_code')
         messages.success(request, "فرم خود را بازبینی کنید", 'success')
-        return redirect('accounts:register')
+        return redirect('flowaccounts:register')
 
 
 # is
@@ -84,7 +83,7 @@ class UserRegisterVerifyCodeView(View):
 
     def get(self, request):
         form = self.form_class
-        return render(request, 'accounts/verify.html', {'form': form})
+        return render(request, 'flowaccounts/verify.html', {'form': form})
 
     def post(self, request):
         scale = time(0, 3, 0, 0)
@@ -99,7 +98,7 @@ class UserRegisterVerifyCodeView(View):
         if form.is_valid():
             if not code_instance.calculate_date() == datetime.now().date():
                 messages.error(request, 'کد منقضی شد!', 'danger')
-                return redirect('accounts:register')
+                return redirect('flowaccounts:register')
             substraction = datetime.combine(date.today(), datetime.now().time()) - datetime.combine(date.today(),
                                                                                                     code_instance.calculate_time())
 
@@ -109,16 +108,16 @@ class UserRegisterVerifyCodeView(View):
             # print(duration)
             if substraction > duration:
                 messages.error(request, 'کد منقضی شد!', 'danger')
-                return redirect('accounts:register')
+                return redirect('flowaccounts:register')
             if User.objects.filter(username=user_session['username']).exists():
                 messages.error(request, 'نام کاربری از قبل وجود دارد')
-                return redirect('accounts:register')
+                return redirect('flowaccounts:register')
             if User.objects.filter(phone_number=user_session['phone_number']).exists():
                 messages.error(request, 'شماره تلفن از قبل وجود دارد')
-                return redirect('accounts:register')
+                return redirect('flowaccounts:register')
             if User.objects.filter(email=user_session['email']).exists():
                 messages.error(request, 'ایمیل از قبل وجود دارد')
-                return redirect('accounts:register')
+                return redirect('flowaccounts:register')
             cd = form.cleaned_data
             if cd['code'] == code_instance.code:
                 User.objects.create_user(user_session['username'], user_session['phone_number'],
@@ -126,11 +125,11 @@ class UserRegisterVerifyCodeView(View):
                                          user_session['password'], )
                 code_instance.delete()
                 messages.success(request, 'کاربر با موفقیت ثبت شد', 'success')
-                return redirect('accounts:login')
+                return redirect('flowaccounts:login')
             else:
                 messages.error(request, "کد اشتباه!", 'danger')
-                return redirect('accounts:verify_code')
-        return render(request, 'accounts/register.html', {'form': form})
+                return redirect('flowaccounts:verify_code')
+        return render(request, 'flowaccounts/register.html', {'form': form})
 
 
 def user_update(request):
@@ -141,8 +140,8 @@ def user_update(request):
             user_form.save()
             login(request, current_user)
             messages.success(request, 'کاربر آپدیت شد')
-            return redirect("accounts:update")
-        return render(request, 'accounts/update_user.html', {'user_form': user_form})
+            return redirect("flowaccounts:update")
+        return render(request, 'flowaccounts/update_user.html', {'user_form': user_form})
     else:
         messages.error(request, 'برای ورود به پیج باید وارد حساب شوید!')
         return redirect('home:home')
@@ -158,16 +157,16 @@ def update_password(request):
             if form.is_valid():
                 form.save()
                 messages.success(request, 'رمز شما آپدیت شد!')
-                return redirect('accounts:login')
+                return redirect('flowaccounts:login')
             else:
                 for error in list(form.errors.values()):
                     messages.error(request, error)
-                    return redirect('accounts:update_password')
+                    return redirect('flowaccounts:update_password')
         else:
             form = ChangePasswordForm(current_user)
-            return render(request, 'accounts/update_password.html', {'form': form})
+            return render(request, 'flowaccounts/update_password.html', {'form': form})
     else:
         messages.error(request, 'برای ورود به پیج باید وارد حساب شوید!')
-        return redirect('accounts:index')
+        return redirect('flowaccounts:index')
 
 
