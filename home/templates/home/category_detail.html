@@ -3,7 +3,9 @@
 
     <img src="{{ category.image.url }}">
     <h1>{{ category.name }}</h1>
-
+<h1>create event</h1>
+<a href="{% url 'home:create_event' category.id %}">create event</a>
+<br/>
 
 {% for event in event_list %}
     <img src="{{ event.image.url }}">

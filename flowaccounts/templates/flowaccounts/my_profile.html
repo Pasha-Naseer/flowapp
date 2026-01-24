@@ -1,0 +1,22 @@
+{% extends "home/base.html" %}
+
+{% block content %}
+    <img src="{{ profile.profile_pic.url }}">
+    <h1>{{ profile.user.username }}</h1>
+
+    <h2>{{ profile.first_name }} {{ profile.last_name }}</h2>
+    <p>{{ profile.bio }}</p>
+
+
+    <form method="post" action="{% url 'flowaccounts:my_profile' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Save">
+    </form>
+
+    {% for event in my_events %}
+    <img src="{{ event.image.url }}">
+    <a href="{% url 'home:event_detail' event.category.id event.id %}"><h1>{{ event.name }}</h1></a>
+    {% endfor %}
+
+{% endblock %}

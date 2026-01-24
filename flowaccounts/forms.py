@@ -1,6 +1,6 @@
 from django.contrib.auth.forms import SetPasswordForm
 from django import forms
-from .models import User
+from .models import User, Profile
 from django.core.exceptions import ValidationError
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from django.core.validators import MinLengthValidator
@@ -145,3 +145,15 @@ class UserRegistrationForm(forms.Form):
 
 class VerifyCodeForm(forms.Form):
     code = forms.IntegerField(label="", widget=forms.TextInput(attrs={'class':'form-control', 'placeholder':'Verify Code'}), required=True)
+
+
+class ProfileExploreForm(forms.Form):
+    username = forms.CharField(max_length=225, label="explore", widget=forms.TextInput(attrs={'class':'form-control', 'placeholder':'profile, category or event'}), required=True)
+
+
+class ProfileUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ("profile_pic", "first_name", "last_name", "bio")
+
+

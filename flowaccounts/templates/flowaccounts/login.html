@@ -1,0 +1,10 @@
+{% extends 'home/base.html' %}
+{% block content %}
+
+    <form method='post' action="{% url 'flowaccounts:login' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="login">
+    </form>
+    
+{% endblock %}

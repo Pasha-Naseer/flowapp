@@ -1,0 +1,10 @@
+{% extends 'home/base.html' %}
+{% block content %}
+
+    <form method='post' action="{% url 'flowaccounts:verify_code' %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="verify">
+    </form>
+    
+{% endblock %}

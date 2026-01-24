@@ -3,5 +3,30 @@
 
     <img src="{{ event.image.url }}">
     <h1>{{ event.name }}</h1>
+    <a href="{% url 'flowaccounts:profile' event.promoter.profile.id %}"><h2>{{ event.promoter }}</h2></a>
+    <br/>
+    <h3>participants: </h3>
+    {% for participant in event.participants.all %}
+        <a href="{% url 'flowaccounts:profile' participant.profile.id %}"><h6>{{ participant.username }}</h6></a>
+    {% endfor %}
 
+    {% if request.user != event.promoter %}
+    <form method="post" action="{% url 'home:event_request' category.id event.id %}">
+        {% csrf_token %}
+        <input type="submit" value="{{ status }}"> <!--  request.POST values should be {{status}} -->
+    </form>
+    {% endif %}
+    <form method="post" action="{% url 'home:event_detail' category.id event.id %}">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="submit">
+    </form>
+
+    {% for comment in comments %}
+        {% if comment.confirmed == True %}
+            <a href="{% url 'flowaccounts:profile' comment.profile.id %}"><h3>{{ comment }}</h3></a>
+            <h5>{{ comment.text }}</h5>
+            <h6>{{ comment.date_submitted }}</h6>
+        {% endif %}
+    {% endfor %}
 {% endblock %}

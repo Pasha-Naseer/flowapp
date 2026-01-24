@@ -1,0 +1,42 @@
+{% extends 'home/base.html' %}
+
+{% block content %}
+
+    <form method="post" action="{% url 'flowaccounts:explore' %}">
+        {% csrf_token %}
+        <h3>search for profiles, categories or events</h3>
+        {{ form.as_p }}
+        <input type="submit" value="search">
+    </form>
+profile result:
+    {% for profile in profiles %}
+        <a href="{% url 'flowaccounts:profile' profile.id %}"><h3>{{ profile }}</h3></a>
+    {% endfor %}
+<br/>
+category results:
+    {% for category in categories %}
+        <a href="{% url 'home:category_detail' category.id %}"><h3>{{ category }}</h3></a>
+    {% endfor %}
+<br/>
+event results:
+    {% for event in events %}
+        <a href="{% url 'home:event_detail' event.category.id event.id %}"><h3>{{ event }}</h3></a>
+    {% endfor %}
+
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+explore:
+<section>
+    <div>
+
+{% for event_item in explore_events %}
+    <img src="{{ event_item.image.url }}">
+    <a href="{% url 'home:event_detail' event_item.category.id event_item.id %}"><h1>{{ event_item.name }}</h1></a>
+{% endfor %}
+    </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends 'home/base.html' %}
+
+{% block content %}
+    {% for req in membership_reqs %}
+        <h2>{{ req.profile }} wants to join {{ req.event }} event</h2>
+
+    <button>accept</button>
+    <button>reject</button>
+
+    {% endfor%}
+
+    {% for notif in notifs %}
+        <h3>{{ notif.notif_text }}</h3>
+        <h3>{{ notif.date_submitted }}</h3>
+    {% endfor %}
+{% endblock %}
