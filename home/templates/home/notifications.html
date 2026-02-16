@@ -1,16 +1,175 @@
 {% extends 'home/base.html' %}
-
 {% block content %}
-    {% for req in membership_reqs %}
-        <h2>{{ req.profile }} wants to join {{ req.event }} event</h2>
 
-    <button>accept</button>
-    <button>reject</button>
+<!-- ================= MEMBERSHIP REQUESTS ================= -->
+<section class="container my-5">
+  <h2 class="section-title">Membership Requests</h2>
 
-    {% endfor%}
+  {% if membership_reqs %}
+    <div class="request-list">
+      {% for req in membership_reqs %}
+        <div class="request-card">
+          <div class="request-text">
+            <strong>{{ req.profile }}</strong> wants to join
+            <span>{{ req.event }}</span>
+          </div>
 
-    {% for notif in notifs %}
-        <h3>{{ notif.notif_text }}</h3>
-        <h3>{{ notif.date_submitted }}</h3>
-    {% endfor %}
+          <!-- ACTION FORM -->
+          <form method="post" class="request-actions">
+            {% csrf_token %}
+
+            <!-- identify which request -->
+            <input type="hidden" name="request_id" value="{{ req.id }}">
+
+            <!-- ACCEPT -->
+            <button
+              type="submit"
+              name="action"
+              value="accept"
+              class="btn-accept">
+              Accept
+            </button>
+
+            <!-- REJECT -->
+            <button
+              type="submit"
+              name="action"
+              value="reject"
+              class="btn-reject">
+              Reject
+            </button>
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="empty-text">No membership requests.</p>
+  {% endif %}
+</section>
+
+
+<!-- ================= NOTIFICATIONS ================= -->
+<section class="container my-5">
+  <h2 class="section-title">Notifications</h2>
+
+  {% if notifs %}
+    <div class="notif-list">
+      {% for notif in notifs %}
+        <div class="notif-card">
+          <p class="notif-text">{{ notif.notif_text }}</p>
+          <span class="notif-date">{{ notif.date_submitted }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="empty-text">You’re all caught up 🎉</p>
+  {% endif %}
+</section>
+<style>
+    :root {
+  --orange-main: #FF6600;
+  --orange-soft: #FF9751;
+  --blue-dark: #22305C;
+  --blue-accent: #136197;
+}
+
+/* ===== REQUESTS ===== */
+.request-list {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.request-card {
+  padding: 1.4rem 1.6rem;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.request-text {
+  font-size: 1rem;
+  color: var(--blue-dark);
+}
+
+.request-text span {
+  color: var(--blue-accent);
+  font-weight: 600;
+}
+
+/* ACTIONS */
+.request-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.btn-accept,
+.btn-reject {
+  padding: 0.45rem 1.2rem;
+  border-radius: 999px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-accept {
+  background: linear-gradient(
+    135deg,
+    var(--orange-main),
+    var(--orange-soft)
+  );
+  color: #fff;
+  box-shadow: 0 8px 25px rgba(255,102,0,0.45);
+}
+
+.btn-accept:hover {
+  transform: translateY(-2px);
+}
+
+.btn-reject {
+  background: rgba(34,48,92,0.1);
+  color: var(--blue-dark);
+}
+
+.btn-reject:hover {
+  background: rgba(34,48,92,0.2);
+}
+
+/* ===== NOTIFICATIONS ===== */
+.notif-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.notif-card {
+  padding: 1.2rem 1.4rem;
+  border-radius: 18px;
+  background: linear-gradient(
+    135deg,
+    rgba(19,97,151,0.12),
+    rgba(34,48,92,0.12)
+  );
+  box-shadow: 0 14px 35px rgba(0,0,0,0.12);
+}
+
+.notif-text {
+  font-weight: 600;
+  color: var(--blue-dark);
+}
+
+.notif-date {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+/* EMPTY STATE */
+.empty-text {
+  color: #777;
+  font-style: italic;
+}
+
+</style>
 {% endblock %}

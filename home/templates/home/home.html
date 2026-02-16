@@ -2,54 +2,435 @@
 {% load static %}
 
 {% block content %}
-<section>
-    <div>
-        <h1>story section:</h1>
-        {% for story in stories %}
-            <a href="{% url 'flowaccounts:profile' story.profile.id %}"><h2>{{ story.profile.user.username }}</h2></a>
-            <img src="{{ story.img.url }}">
-        {% endfor %}
-    </div>
-</section>
-<br/>
-<br/>
-<br/>
-<br/>
-<br/>
-<br/>
-<br/>
-<br/>
-<section class="flovv-explorer container my-4">
 
-    <div class="row g-3">
+<!-- ================= STORIES ================= -->
+<section class="flovv-stories my-5">
+  <div class="container">
 
-        {% for category in categories %}
-        <div class="col-12 col-sm-6 col-md-4">
-            <a href="{% url 'home:category_detail' category.id %}" class="flovv-card">
-                <div class="flovv-image-wrapper">
-                    <img src="{{ category.image.url }}" alt="{{ category.name }}">
-                    <div class="flovv-overlay"></div>
-                    <h2 class="flovv-title">{{ category.name }}</h2>
-                </div>
-            </a>
+  <h1 class="section-title">Stories</h1>
+
+
+<div class="story-row">
+<br/>
+  {# ================= YOUR STORY OR ADD STORY ================= #}
+  {% if user_story %}
+    <div class="story-card-wrapper">
+
+      <!-- YOUR STORY -->
+      <div
+        class="story-card unseen your-story"
+        data-image="{{ user_story.image.url }}"
+        data-username="Your story"
+      >
+        <div class="story-ring">
+          <img src="{{ request.user.profile.profile_pic.url }}" alt="">
         </div>
-        {% endfor %}
+        <span>Your story</span>
+      </div>
+
+      <!-- DELETE BUTTON -->
+<form method="post">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="delete_story">
+  <input type="hidden" name="story_id" value="{{ user_story.id }}">
+  <button type="submit" class="delete-story-btn">✕</button>
+</form>
+
+
     </div>
 
-</section>
-{{ request.user }}
-<br>
-{% if request.user.profile %}
-    <a href="{% url 'flowaccounts:my_profile' %}">go to profile</a>
-{% endif %}
+  {% else %}
 
-<a href="{% url 'flowaccounts:explore' %}">explore</a>
-<a href="{% url 'home:notifications' %}">notifs</a>
-{% if request.user.is_authenticated %}
-<a href="{% url 'flowaccounts:logout' %}">logout</a>
-{% else %}
-<a href="{% url 'flowaccounts:register' %}">login</a>
-<a href="{% url 'flowaccounts:login' %}">register</a>
-{% endif %}
+    <!-- ADD STORY -->
+    <div class="story-card add-story">
+      <div class="story-ring">
+        <div class="add-story-inner">
+          <span>+</span>
+        </div>
+      </div>
+      <span>Your story</span>
+    </div>
+
+  {% endif %}
+
+  {# ================= OTHER USERS' STORIES ================= #}
+  {% for story in stories %}
+    <div
+      class="story-card unseen"
+      data-image="{{ story.image.url }}"
+      data-username="{{ story.profile.user.username }}"
+    >
+      <div class="story-ring">
+        <img src="{{ story.profile.profile_pic.url }}" alt="">
+      </div>
+      <span>{{ story.profile.user.username }}</span>
+    </div>
+  {% endfor %}
+
+</div>
+
+
+  </div>
+</section>
+
+<!-- ================= STORY MODAL ================= -->
+<div id="storyModal" class="story-modal">
+  <div class="story-modal-content">
+    <img id="storyModalImage" src="" alt="">
+    <span id="storyModalUser"></span>
+    <button class="story-close">&times;</button>
+  </div>
+</div>
+<!-- ================= ADD STORY MODAL ================= -->
+<div id="addStoryModal" class="story-modal">
+  <div class="story-modal-content add-story-modal">
+    <h3>Add Story</h3>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+   <input type="hidden" name="action" value="post_story">
+
+    {{ form }}
+    <button type="submit" class="add-story-btn">Post</button>
+  </form>
+
+
+    <button class="story-close add-story-close">&times;</button>
+  </div>
+</div>
+
+<!-- ================= CATEGORIES ================= -->
+<section class="flovv-explorer container my-5">
+  <h1 class="section-title">Explore Categories</h1>
+
+  <div class="row g-4">
+    {% for category in categories %}
+      <div class="col-12 col-sm-6 col-md-4">
+        <a href="{% url 'home:category_detail' category.id %}" class="flovv-card">
+          <img src="{{ category.image.url }}" alt="{{ category.name }}">
+          <div class="flovv-gradient"></div>
+          <h2>{{ category.name }}</h2>
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<style>
+:root {
+  --orange-main: #FF6600;
+  --orange-soft: #FF9751;
+  --blue-dark: #22305C;
+  --blue-accent: #136197;
+}
+
+/* ===== TITLES ===== */
+.section-title {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: var(--blue-dark);
+  margin-bottom: 1.6rem;
+}
+
+/* ===== STORIES ===== */
+.story-row {
+  display: flex;
+  gap: 1.2rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.story-card {
+  min-width: 90px;
+  text-align: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--blue-dark);
+}
+
+/* Ring */
+.story-ring {
+  padding: 3px;
+  border-radius: 50%;
+  margin-bottom: 0.3rem;
+}
+
+/* Unseen story – solid Flovv orange ring */
+.story-card.unseen .story-ring {
+  background: var(--orange-main);
+}
+
+
+
+/* Seen */
+.story-card.seen .story-ring {
+  background: #bbb;
+}
+
+.story-ring img {
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: white;
+  padding: 2px;
+  transition: transform 0.3s ease;
+}
+
+.story-card:hover img {
+  transform: scale(1.08);
+}
+
+/* ===== STORY MODAL ===== */
+.story-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.88);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.story-modal-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+}
+
+.story-modal-content img {
+  width: 100%;
+  border-radius: 24px;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.7);
+}
+
+#storyModalUser {
+  position: absolute;
+  top: 14px;
+  left: 18px;
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.story-close {
+  position: absolute;
+  top: 8px;
+  right: 14px;
+  background: none;
+  border: none;
+  font-size: 2.2rem;
+  color: white;
+  cursor: pointer;
+}
+
+/* ===== CATEGORY CARDS ===== */
+.flovv-card {
+  position: relative;
+  height: 320px;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 22px 50px rgba(0,0,0,0.22);
+  transition: all 0.35s ease;
+}
+
+.flovv-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.flovv-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(34,48,92,0.95),
+    rgba(19,97,151,0.35),
+    transparent
+  );
+}
+
+.flovv-card h2 {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  color: white;
+  font-weight: 800;
+  font-size: 1.4rem;
+  z-index: 2;
+}
+
+/* Hover */
+.flovv-card:hover {
+  transform: translateY(-8px);
+}
+
+.flovv-card:hover img {
+  transform: scale(1.1);
+}
+
+.flovv-card:hover .flovv-gradient {
+  background: linear-gradient(
+    to top,
+    rgba(255,102,0,0.9),
+    rgba(255,151,81,0.45),
+    transparent
+  );
+}
+/* ===== STORIES SECTION SURFACE ===== */
+.flovv-stories {
+  padding: 3.5rem 0 3rem;
+  background: linear-gradient(
+    to bottom,
+    rgba(34,48,92,0.04),
+    rgba(34,48,92,0.00)
+  );
+}
+/* ===== CATEGORIES RHYTHM OFFSET ===== */
+.flovv-explorer {
+  margin-top: -1.5rem;
+  padding-top: 3rem;
+}
+/* ===== ADD STORY ===== */
+.story-card.add-story .story-ring {
+  background: var(--orange-main);
+}
+
+.add-story-inner {
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-story-inner span {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--orange-main);
+}
+
+/* ===== ADD STORY MODAL ===== */
+.add-story-modal {
+  background: white;
+  padding: 2rem;
+  border-radius: 22px;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+}
+
+.add-story-modal h3 {
+  margin-bottom: 1rem;
+  font-weight: 800;
+  color: var(--blue-dark);
+}
+
+.add-story-modal input[type="file"] {
+  width: 100%;
+  margin-bottom: 1.2rem;
+}
+
+.add-story-btn {
+  width: 100%;
+  padding: 0.6rem;
+  border-radius: 999px;
+  border: none;
+  background: var(--orange-main);
+  color: white;
+  font-weight: 700;
+}
+/* ===== STORY WRAPPER ===== */
+.story-card-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* ===== DELETE STORY BUTTON ===== */
+.delete-story-btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.65);
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(6px);
+}
+
+/* Show on hover */
+.story-card-wrapper:hover .delete-story-btn {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+/* Hover danger feedback */
+.delete-story-btn:hover {
+  background: #ff3b3b;
+  transform: scale(1.15);
+}
+.story-row {
+  display: flex;
+  gap: 1.2rem;
+  overflow-x: auto;
+  padding-bottom: 1.2rem; /* more bottom space */
+  padding-top: 0.5rem; /* extra top space for delete button */
+}
+
+</style>
+
+<script>
+const modal = document.getElementById("storyModal");
+const modalImg = document.getElementById("storyModalImage");
+const modalUser = document.getElementById("storyModalUser");
+const closeBtn = document.querySelector(".story-close");
+
+document.querySelectorAll(".story-card").forEach(card => {
+  card.addEventListener("click", () => {
+    modalImg.src = card.dataset.image;
+    modalUser.innerText = card.dataset.username;
+    modal.style.display = "flex";
+
+    card.classList.remove("unseen");
+    card.classList.add("seen");
+  });
+});
+
+closeBtn.onclick = () => modal.style.display = "none";
+modal.onclick = e => {
+  if (e.target === modal) modal.style.display = "none";
+};
+
+const addStoryBtn = document.querySelector(".story-card.add-story");
+const addStoryModal = document.getElementById("addStoryModal");
+const addStoryClose = document.querySelector(".add-story-close");
+
+addStoryBtn.addEventListener("click", () => {
+  addStoryModal.style.display = "flex";
+});
+
+addStoryClose.onclick = () => addStoryModal.style.display = "none";
+
+addStoryModal.onclick = e => {
+  if (e.target === addStoryModal) addStoryModal.style.display = "none";
+};
+
+
+</script>
 
 {% endblock %}

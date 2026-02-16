@@ -1,5 +1,5 @@
 from django import forms
-from .models import Event
+from .models import Event, Story
 
 
 class EventCreateForm(forms.ModelForm):
@@ -13,3 +13,9 @@ class CommentForm(forms.Form):
                                                                                    'placeholder': 'comment',
                                                                                    "rows": 6,
                                                                                    'style': "resize: vertical;"}))
+
+
+class StoryForm(forms.ModelForm):
+    class Meta:
+        model = Story
+        fields = ['image']

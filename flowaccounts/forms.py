@@ -147,13 +147,59 @@ class VerifyCodeForm(forms.Form):
     code = forms.IntegerField(label="", widget=forms.TextInput(attrs={'class':'form-control', 'placeholder':'Verify Code'}), required=True)
 
 
+# class ProfileExploreForm(forms.Form):
+#     username = forms.CharField(max_length=225, label="explore", widget=forms.TextInput(attrs={'class':'form-control', 'placeholder':'profile, category or event'}), required=True)
+
 class ProfileExploreForm(forms.Form):
-    username = forms.CharField(max_length=225, label="explore", widget=forms.TextInput(attrs={'class':'form-control', 'placeholder':'profile, category or event'}), required=True)
+    query = forms.CharField(
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Search people, events, categories...',
+            'class': 'search-input'
+        })
+    )
+
+from django import forms
+from django.contrib.auth.models import User
+from .models import Profile
 
 
 class ProfileUpdateForm(forms.ModelForm):
+    # Extra field for username from User model
+    username = forms.CharField(
+        max_length=150,
+        required=True,
+        widget=forms.TextInput(attrs={'placeholder': 'Username'})
+    )
+
     class Meta:
         model = Profile
         fields = ("profile_pic", "first_name", "last_name", "bio")
+        widgets = {
+            'profile_pic': forms.ClearableFileInput(attrs={'class': 'custom-file-input'}),
+            'first_name': forms.TextInput(attrs={'placeholder': 'First Name'}),
+            'last_name': forms.TextInput(attrs={'placeholder': 'Last Name'}),
+            'bio': forms.Textarea(attrs={'placeholder': 'Bio', 'rows': 3}),
+        }
 
+    def __init__(self, *args, **kwargs):
+        # Pass the user instance when initializing the form
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        # Pre-fill the username field if user exists
+        if self.user:
+            self.fields['username'].initial = self.user.username
+
+    def save(self, commit=True):
+        profile = super().save(commit=False)
+
+        # Update the username in the related User model
+        if self.user:
+            self.user.username = self.cleaned_data['username']
+            if commit:
+                self.user.save()
+
+        if commit:
+            profile.save()
+        return profile
 

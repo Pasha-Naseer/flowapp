@@ -174,7 +174,7 @@ def update_password(request):
             return render(request, 'flowaccounts/update_password.html', {'form': form})
     else:
         messages.error(request, 'برای ورود به پیج باید وارد حساب شوید!')
-        return redirect('flowaccounts:index')
+        return redirect('home:home')
 
 
 class UserProfileView(View):
@@ -221,11 +221,39 @@ class UserProfileView(View):
             return redirect('flowaccounts:login')
 
     def post(self, request, profile_id):
-        if request.user.is_authenticated:
-            profile = get_object_or_404(Profile, pk=profile_id)
-            if request.user == profile.user:
-                return redirect("flowaccounts:my_profile")
-            friend, already_there = Friend.objects.get_or_create(user=request.user)
+        if not request.user.is_authenticated:
+            messages.error(request, self.message)
+            return redirect('flowaccounts:login')
+
+        profile = get_object_or_404(Profile, pk=profile_id)
+
+        # Prevent adding yourself
+        if request.user == profile.user:
+            return redirect("flowaccounts:my_profile")
+
+        action = request.POST.get("action")
+        friend, _ = Friend.objects.get_or_create(user=request.user)
+
+        if action == "add":
+            FriendItem.objects.get_or_create(
+                friend=friend,
+                user=profile.user
+            )
+
+        elif action == "remove":
+            FriendItem.objects.filter(
+                friend=friend,
+                user=profile.user
+            ).delete()
+
+        return redirect("flowaccounts:profile", profile_id=profile_id)
+
+    # def post(self, request, profile_id):
+    #     if request.user.is_authenticated:
+    #         profile = get_object_or_404(Profile, pk=profile_id)
+    #         if request.user == profile.user:
+    #             return redirect("flowaccounts:my_profile")
+    #         friend, already_there = Friend.objects.get_or_create(user=request.user)
 
             # if request.POST['status'] == "add to friends":
             #     try:
@@ -246,16 +274,16 @@ class UserProfileView(View):
             #     else:
             #         friend_item.delete()
             #         # do we need to display success messages?
-
-            friend_item = FriendItem(friend=friend, user=profile.user)
-            # can add himself to close friend?
-            # I will have a separate page for my_profile and force redirect
-            friend_item.save()
-            # add if add, del if del
-            return redirect("flowaccounts:profile", profile_id=profile_id)
-        else:
-            messages.error(request, self.message)
-            return redirect('flowaccounts:login')
+        #
+        #     friend_item = FriendItem(friend=friend, user=profile.user)
+        #     # can add himself to close friend?
+        #     # I will have a separate page for my_profile and force redirect
+        #     friend_item.save()
+        #     # add if add, del if del
+        #     return redirect("flowaccounts:profile", profile_id=profile_id)
+        # else:
+        #     messages.error(request, self.message)
+        #     return redirect('flowaccounts:login')
 
 
 class ExploreView(View):
@@ -265,7 +293,7 @@ class ExploreView(View):
         # for now, we sort them by date, but later we need better algo
         explore_events = Event.objects.filter(privacy="PU").order_by("-event_date")
         # we need to handle private events
-        form = self.form_class
+        form = self.form_class()
         context = {
             'form': form,
             "explore_events": explore_events,
@@ -276,7 +304,8 @@ class ExploreView(View):
         form = self.form_class(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
-            searched = cd['username']
+            searched = cd['query']
+
             profiles = Profile.objects.filter(Q(bio__icontains=searched))
             users = User.objects.filter(Q(username__icontains=searched) | Q(first_name__icontains=searched) |
                                                    Q(last_name__icontains=searched))
@@ -308,9 +337,55 @@ class ExploreView(View):
                 'profiles': profiles,
                 'categories': categories,
                 'events': events,
-                'form': self.form_class,
+                'form': form,
             }
             return render(request, 'flowaccounts/explore.html', context)
+        return self.get(request)
+
+# class MyProfileView(View):
+#     message = "برای دسترسی به این بخش باید وارد حساب کاربری شوید!"
+#     form_class = ProfileUpdateForm
+#
+#     def get(self, request):
+#         if request.user.is_authenticated:
+#             profile = get_object_or_404(Profile, user=request.user)
+#             form = self.form_class(instance=profile)
+#             my_events = Event.objects.filter(promoter=request.user).order_by("-event_date")
+#             context = {
+#                 "my_events": my_events,
+#                 "profile": profile,
+#                 "form": form,
+#             }
+#             return render(request, "flowaccounts/my_profile.html", context)
+#         else:
+#             messages.error(request, self.message)
+#             return redirect('flowaccounts:login')
+#
+#     def post(self, request):
+#         if request.user.is_authenticated:
+#             form = self.form_class(request.POST)
+#             if form.is_valid():
+#                 cd = form.cleaned_data
+#                 profile = get_object_or_404(Profile, user=request.user)
+#                 profile.user = request.user
+#                 profile.profile_pic = request.FILES['profile_pic']
+#                 profile.first_name = cd['first_name']
+#                 profile.last_name = cd['last_name']
+#                 profile.bio = cd['bio']
+#                 profile.save()
+#                 # form.save()
+#                 context = {
+#                     # "profile": profile,
+#                     "form": form,
+#                 }
+#                 return redirect('flowaccounts:my_profile')
+#             messages.error(request, 'فرم را پر کنید!')
+#             return redirect('flowaccounts:my_profile')
+#         else:
+#             messages.error(request, self.message)
+#             return redirect('flowaccounts:login')
+
+
 
 
 class MyProfileView(View):
@@ -320,38 +395,28 @@ class MyProfileView(View):
     def get(self, request):
         if request.user.is_authenticated:
             profile = get_object_or_404(Profile, user=request.user)
-            form = self.form_class(instance=profile)
+            form = self.form_class(instance=profile, user=request.user)
             my_events = Event.objects.filter(promoter=request.user).order_by("-event_date")
-            context = {
+            return render(request, "flowaccounts/my_profile.html", {
                 "my_events": my_events,
                 "profile": profile,
                 "form": form,
-            }
-            return render(request, "flowaccounts/my_profile.html", context)
-        else:
-            messages.error(request, self.message)
-            return redirect('flowaccounts:login')
+            })
+        messages.error(request, self.message)
+        return redirect('flowaccounts:login')
 
     def post(self, request):
         if request.user.is_authenticated:
-            form = self.form_class(request.POST)
+            profile = get_object_or_404(Profile, user=request.user)
+            form = self.form_class(request.POST, request.FILES, instance=profile, user=request.user)
             if form.is_valid():
-                cd = form.cleaned_data
-                profile = get_object_or_404(Profile, user=request.user)
-                profile.user = request.user
-                profile.profile_pic = cd["profile_pic"]
-                profile.first_name = cd['first_name']
-                profile.last_name = cd['last_name']
-                profile.bio = cd['bio']
-                profile.save()
-                # form.save()
-                context = {
-                    # "profile": profile,
-                    "form": form,
-                }
+                if User.objects.filter(username=form.cleaned_data['username']).exists():
+                    messages.error(request, "نام کاربری از قبل وجود دارد")
+                    return redirect('flowaccounts:my_profile')
+                form.save()
+                messages.success(request, "اطلاعات پروفایل شما با موفقیت بروزرسانی شد!")
                 return redirect('flowaccounts:my_profile')
-            messages.error(request, 'فرم را پر کنید!')
+            messages.error(request, "فرم را به درستی پر کنید!")
             return redirect('flowaccounts:my_profile')
-        else:
-            messages.error(request, self.message)
-            return redirect('flowaccounts:login')
+        messages.error(request, self.message)
+        return redirect('flowaccounts:login')

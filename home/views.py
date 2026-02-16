@@ -1,16 +1,19 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views import View
 from .models import Category, Event, Comment, Membership, Notification, Friend, FriendItem, Story
-from .forms import EventCreateForm, CommentForm
+from .forms import EventCreateForm, CommentForm, StoryForm
 from django.utils import timezone
 from django.contrib import messages
 import datetime
-
+from datetime import timedelta
 
 class HomeView(View):
+    form_class = StoryForm
     def get(self, request):
+        form = self.form_class
         categories = Category.objects.all()
         stories = []
+        user_story = None
         if request.user.is_authenticated:
             friend, check = Friend.objects.get_or_create(user=request.user)
             friends = FriendItem.objects.filter(friend=friend)
@@ -30,15 +33,47 @@ class HomeView(View):
                     pass
                 else:
                     stories.append(story)
+
+            user_story = Story.objects.filter(
+                profile=request.user.profile,
+                date_posted__gte=timezone.now() - timedelta(hours=24)
+            ).first()
         # show "in order to see stories --> login"
         context = {
-           "categories": categories,
+            'form': form,
+            "categories": categories,
             "stories": stories,
+            'user_story': user_story,
         }
         return render(request, 'home/home.html', context)
-    
+
     def post(self, request):
-        pass
+        if not request.user.is_authenticated:
+            messages.error(request, "برای پست استوری باید حتما ثبت نام کنید")
+            return redirect('flowaccounts:register')
+
+        action = request.POST.get('action')
+
+        if action == 'post_story':
+            # Handle uploading a new story
+            if 'image' in request.FILES:
+                story = Story(profile=request.user.profile, image=request.FILES['image'])
+                story.save()
+                messages.success(request, "استوری پست شد")
+            else:
+                messages.error(request, "لطفا یک تصویر انتخاب کنید")
+
+        elif action == 'delete_story':
+            # Handle deleting a story
+            story_id = request.POST.get('story_id')
+            try:
+                story = Story.objects.get(id=story_id, profile=request.user.profile)
+                story.delete()
+                messages.success(request, "استوری حذف شد")
+            except Story.DoesNotExist:
+                messages.error(request, "استوری یافت نشد یا شما اجازه حذف ندارید")
+
+        return redirect('home:home')
 
 
 class CategoryDetailView(View):
@@ -51,7 +86,8 @@ class CategoryDetailView(View):
             friend, check = Friend.objects.get_or_create(user=event.promoter)
             if event.privacy == "PR":
                 try:
-                    friend_item = FriendItem.objects.get(friend=friend, user=request.user)
+                    if request.user.is_authenticated:
+                        friend_item = FriendItem.objects.get(friend=friend, user=request.user)
                     # we need to check if we can del the var in the beginning
                 except (ValueError, FriendItem.DoesNotExist):
                     if request.user != event.promoter:  # checking if the promoter himself is viewing
@@ -108,7 +144,7 @@ class EventCreateView(View):
                     # a bit concerned about this 00:00
                     # return get
 
-            event = Event(name= cd['name'], promoter=request.user, image=cd['image'], description=cd['description'],
+            event = Event(name= cd['name'], promoter=request.user, image=request.FILES['image'], description=cd['description'],
                           start_hour=cd['start_hour'], end_hour=cd['end_hour'], event_date=cd['event_date'],
                           privacy=cd['privacy'], category=category)
             event.save()
@@ -139,7 +175,7 @@ class EventDetailView(View):
         comments = Comment.objects.filter(event=event)
         try:
             membership_status = Membership.objects.get(event=event, profile=request.user.profile, to_whom=event.promoter.profile)
-        except (ValueError, Membership.DoesNotExist):  # check this from polls
+        except (ValueError, Membership.DoesNotExist, Exception):  # check this from polls
             status = "request membership"
         else:
             if membership_status.accepted == False:
@@ -187,46 +223,52 @@ class EventRequestView(View):
             if profile == event.promoter.profile:
                 messages.error(request, "پروموتر ایونت و درخواست دهند یکی است!")
                 return redirect("home:event_detail", event_id=event_id, category_id=category_id)
+            action = request.POST["action"]
+            if action == "request":
+                try:
+                     membership_req = Membership.objects.get(event=event, profile=profile,
+                                                             to_whom=event.promoter.profile)
+                except (ValueError, Membership.DoesNotExist):
+                    membership_req = Membership(event=event, profile=profile, to_whom=event.promoter.profile)
+                    membership_req.save()
+                    messages.success(request, "درخواست با موفقیت ثبت شد")
+                    return redirect("home:event_detail", category_id=category_id, event_id=event_id)
+                else:
+                    messages.error(request, self.msg)
+                    return redirect("home:event_detail", category_id=category_id, event_id=event_id)
 
-            # if request.POST["status"] == "request membership":
-            #     try:
-            #          membership_req = Membership.objects.get(event=event, profile=profile,
-            #                                                  to_whom=event.promoter.profile)
-            #     except (ValueError, Membership.DoesNotExist):
-            #         membership_req = Membership(event=event, profile=profile, to_whom=event.promoter.profile)
-            #         membership_req.save()
-            #     else:
-            #         messages.error(request, self.msg)
-            #         return redirect("home:event_detail", category_id=category_id, event_id=event_id)
-            #
-            # elif request.POST["status"] == "requested":
-            #     try:
-            #         membership = Membership.objects.get(event=event, profile=profile, to_whom=event.promoter.profile,
-            #                                             accepted=False)
-            #     except (ValueError, Membership.DoesNotExist):
-            #         messages.error(request, self.msg)
-            #         return redirect("home:event_detail", category_id=category_id, event_id=event_id)
-            #     else:
-            #         membership.delete()
-            #
-            # elif request.POST["status"] == "cancel membership":
-            #     try:
-            #         membership = Membership.objects.get(event=event, profile=profile, to_whom=event.promoter.profile,
-            #                                             accepted=True)
-            #     except (ValueError, Membership.DoesNotExist):
-            #         messages.error(request, self.msg)
-            #         return redirect("home:event_detail", category_id=category_id, event_id=event_id)
-            #     else:
-            #         membership.delete()
-            # else:
-            #     messages.error(request, self.msg)
-            #     return redirect("home:event_detail", category_id=category_id, event_id=event_id)
+            elif action == "cancel_request":
+                try:
+                    membership = Membership.objects.get(event=event, profile=profile, to_whom=event.promoter.profile,
+                                                        accepted=False)
+                except (ValueError, Membership.DoesNotExist):
+                    messages.error(request, self.msg)
+                    return redirect("home:event_detail", category_id=category_id, event_id=event_id)
+                else:
+                    membership.delete()
+                    messages.success(request, "درخواست با موفقیت ثبت شد")
+                    return redirect("home:event_detail", category_id=category_id, event_id=event_id)
+
+            elif action == "cancel_membership":
+                try:
+                    membership = Membership.objects.get(event=event, profile=profile, to_whom=event.promoter.profile,
+                                                        accepted=True)
+                except (ValueError, Membership.DoesNotExist):
+                    messages.error(request, self.msg)
+                    return redirect("home:event_detail", category_id=category_id, event_id=event_id)
+                else:
+                    membership.delete()
+                    messages.success(request, "درخواست با موفقیت ثبت شد")
+                    return redirect("home:event_detail", category_id=category_id, event_id=event_id)
+            else:
+                 messages.error(request, self.msg)
+                 return redirect("home:event_detail", category_id=category_id, event_id=event_id)
             #     # Maybe in the future we send hacking warnings to the server!
 
-            membership_req = Membership(event=event, profile=profile, to_whom=event.promoter.profile)
-            membership_req.save()
-            messages.success(request, "درخواست با موفقیت ثبت شد")
-            return redirect("home:event_detail", category_id=category_id, event_id=event_id)
+            # membership_req = Membership(event=event, profile=profile, to_whom=event.promoter.profile)
+            # membership_req.save()
+            # messages.success(request, "درخواست با موفقیت ثبت شد")
+            # return redirect("home:event_detail", category_id=category_id, event_id=event_id)
         messages.error(request, "برای ثبت درخواست باید وارد حساب کاربری شوید!")
         return redirect('flowaccounts:login')
 
@@ -250,11 +292,29 @@ class NotificationsView(View):
         # can I add comment to notifs using signals?
 
     def post(self, request):
-        # if accept, accepted=True
-        # if reject, delete req
-        # else should be handled as well
-        pass
+        if request.user.is_authenticated:
+            # print(request.POST["action"])
+            action = request.POST['action']
+            membership = get_object_or_404(Membership, pk=request.POST["request_id"])
+            # print(membership)
+            event = membership.event
+            if action == "accept":
+                membership.accepted = True
+                event.participants.add(membership.profile.user)
+                membership.save()
+                event.save()
+            if action == "reject":
+                membership.delete()
+            return redirect("home:notifications")
+        messages.error(request, "برای بازدید از نوتیف ها باید وارد حساب کاربری شوید!")
+        return redirect('flowaccounts:login')
 
+    # def post(self, request):
+    #     # if accept, accepted=True
+    #     # if reject, delete req
+    #     # else should be handled as well
+    #     pass
+    #
 
 # class MyEventsView(View):
 #     def get(self, request):

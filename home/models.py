@@ -65,6 +65,9 @@ class FriendItem(models.Model):
     friend = models.ForeignKey(Friend, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
+    class Meta:
+        unique_together = ('friend', 'user')
+
     def __str__(self):
         return self.user.username
         # handle this?
@@ -89,7 +92,7 @@ class Membership(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
     # when pushing on server null is not True
     to_whom = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="event_owner", null=True)  # can there be collision
-    date_submitted = models.DateTimeField(auto_created=True)  # auto_now_add?
+    date_submitted = models.DateTimeField(auto_now_add=True)  # auto_now_add?
     accepted = models.BooleanField(default=False)
     # delete the rejected ones
 
@@ -106,8 +109,8 @@ class Notification(models.Model):
 
 class Story(models.Model):
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
-    img = models.ImageField(default="fallback.png")
-    date_posted = models.DateTimeField(auto_created=True)
+    image = models.ImageField(default="fallback.png")
+    date_posted = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.profile.user.username}'s story"

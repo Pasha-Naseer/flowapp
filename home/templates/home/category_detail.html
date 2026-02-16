@@ -1,14 +1,170 @@
 {% extends 'home/base.html' %}
 {% block content %}
 
-    <img src="{{ category.image.url }}">
-    <h1>{{ category.name }}</h1>
-<h1>create event</h1>
-<a href="{% url 'home:create_event' category.id %}">create event</a>
-<br/>
+<!-- ================= CATEGORY HEADER ================= -->
+<section class="category-hero container my-5">
+  <div class="category-card">
+    <img src="{{ category.image.url }}" alt="{{ category.name }}">
+    <div class="category-overlay"></div>
 
-{% for event in event_list %}
-    <img src="{{ event.image.url }}">
-    <a href="{% url 'home:event_detail' category.id event.id %}"><h1>{{ event.name }}</h1></a>
-{% endfor %}
+    <div class="category-info">
+      <h1>{{ category.name }}</h1>
+
+      <a href="{% url 'home:create_event' category.id %}" class="create-btn">
+        + Create Event
+      </a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ================= EVENTS ================= -->
+<section class="container my-5">
+  <h2 class="section-title">Events</h2>
+
+  <div class="row g-4">
+    {% for event in event_list %}
+      <div class="col-12 col-sm-6 col-md-4">
+        <a href="{% url 'home:event_detail' category.id event.id %}" class="event-card">
+          <img src="{{ event.image.url }}" alt="{{ event.name }}">
+          <div class="event-gradient"></div>
+          <h3>{{ event.name }}</h3>
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+<style>
+    :root {
+  --orange-main: #FF6600;
+  --orange-soft: #FF9751;
+  --blue-dark: #22305C;
+  --blue-accent: #136197;
+}
+
+/* ===== CATEGORY HERO ===== */
+.category-card {
+  position: relative;
+  height: 380px;
+  border-radius: 26px;
+  overflow: hidden;
+  box-shadow: 0 25px 55px rgba(0,0,0,0.25);
+}
+
+.category-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.category-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(34,48,92,0.95),
+    rgba(19,97,151,0.35),
+    transparent
+  );
+}
+
+.category-info {
+  position: absolute;
+  bottom: 30px;
+  left: 30px;
+  right: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.category-info h1 {
+  color: #fff;
+  font-size: 2.2rem;
+  font-weight: 800;
+  text-shadow: 0 6px 20px rgba(0,0,0,0.4);
+}
+
+/* CREATE EVENT BUTTON */
+.create-btn {
+  padding: 0.6rem 1.4rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    135deg,
+    var(--orange-main),
+    var(--orange-soft)
+  );
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 8px 25px rgba(255,102,0,0.5);
+  transition: all 0.3s ease;
+}
+
+.create-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 35px rgba(255,102,0,0.65);
+}
+
+/* ===== EVENT CARDS ===== */
+.event-card {
+  position: relative;
+  display: block;
+  height: 280px;
+  border-radius: 22px;
+  overflow: hidden;
+  background: var(--blue-dark);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.2);
+  transition: all 0.35s ease;
+}
+
+.event-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.event-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(34,48,92,0.95),
+    rgba(19,97,151,0.35),
+    transparent
+  );
+}
+
+.event-card h3 {
+  position: absolute;
+  bottom: 18px;
+  left: 18px;
+  right: 18px;
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 700;
+  z-index: 2;
+}
+
+/* HOVER EFFECT */
+.event-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 28px 60px rgba(0,0,0,0.28);
+}
+
+.event-card:hover img {
+  transform: scale(1.1);
+}
+
+.event-card:hover .event-gradient {
+  background: linear-gradient(
+    to top,
+    rgba(255,102,0,0.9),
+    rgba(255,151,81,0.45),
+    transparent
+  );
+}
+
+</style>
 {% endblock %}
