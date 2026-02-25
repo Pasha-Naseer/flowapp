@@ -86,15 +86,7 @@
 
   <div class="comment-list">
     {% for comment in comments %}
-      {% if comment.confirmed %}
-        <div class="comment-card">
-          <a href="{% url 'flowaccounts:profile' comment.profile.id %}" class="comment-user">
-            {{ comment }}
-          </a>
-          <p class="comment-text">{{ comment.text }}</p>
-          <span class="comment-date">{{ comment.date_submitted }}</span>
-        </div>
-      {% endif %}
+        {% include "home/_comment.html" with comment=comment level=0 %}
     {% endfor %}
   </div>
 </section>
@@ -253,6 +245,27 @@
   background: linear-gradient(135deg, #8b0000, #cc0000);
   box-shadow: 0 10px 30px rgba(200,0,0,0.45);
 }
+.reply-card {
+  margin-top: 0.8rem;
+  margin-left: 2rem;
+  padding: 0.8rem;
+  border-radius: 14px;
+  background: rgba(19,97,151,0.08);
+}
 
+.reply-btn {
+  margin-top: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--orange-main);
+  font-weight: 600;
+  cursor: pointer;
+}
 </style>
+<script>
+function showReplyForm(commentId) {
+    const form = document.getElementById(`reply-form-${commentId}`);
+    form.style.display = form.style.display === "none" ? "block" : "none";
+}
+</script>
 {% endblock %}

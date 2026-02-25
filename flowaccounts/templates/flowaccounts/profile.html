@@ -4,23 +4,31 @@
 <!-- ================= PROFILE HEADER ================= -->
 <section class="container my-5">
   <div class="profile-card">
-    <img src="{{ profile.profile_pic.url }}" alt="{{ profile.user.username }}">
+
+    {% if user_story %}
+      <div class="profile-story-wrapper"
+           data-image="{{ user_story.image.url }}"
+           data-username="{{ profile.user.username }}">
+        <img src="{{ profile.profile_pic.url }}" alt="{{ profile.user.username }}">
+      </div>
+    {% else %}
+        <img src="{{ profile.profile_pic.url }}" alt="{{ profile.user.username }}">
+    {% endif %}
 
     <div class="profile-info">
       <h1>{{ profile.user.username }}</h1>
       <h2>{{ profile.first_name }} {{ profile.last_name }}</h2>
       <p>{{ profile.bio }}</p>
 
-<form method="post" action="{% url 'flowaccounts:profile' profile.id %}" class="profile-action-form">
-    {% csrf_token %}
-    <button type="submit"
-            name="action"
-            value="{% if status == 'add to friends' %}add{% else %}remove{% endif %}"
-            class="action-btn">
-        {{ status }}
-    </button>
-</form>
-
+      <form method="post" action="{% url 'flowaccounts:profile' profile.id %}" class="profile-action-form">
+        {% csrf_token %}
+        <button type="submit"
+                name="action"
+                value="{% if status == 'add to friends' %}add{% else %}remove{% endif %}"
+                class="action-btn">
+            {{ status }}
+        </button>
+      </form>
     </div>
   </div>
 </section>
@@ -44,8 +52,17 @@
   </div>
 </section>
 
+<!-- ================= STORY MODAL ================= -->
+<div id="storyModal" class="story-modal">
+  <div class="story-modal-content">
+    <img id="storyModalImage" src="" alt="">
+    <span id="storyModalUser"></span>
+    <button class="story-close">&times;</button>
+  </div>
+</div>
+
 <style>
-    :root {
+:root {
   --orange-main: #FF6600;
   --orange-soft: #FF9751;
   --blue-dark: #22305C;
@@ -67,14 +84,39 @@
   align-items: center;
 }
 
+/* ===== PROFILE IMAGE NORMAL ===== */
 .profile-card img {
   width: 140px;
   height: 140px;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid var(--orange-main);
 }
 
+/* ===== STORY ACTIVE RING ===== */
+.profile-story-wrapper {
+  padding: 4px;
+  border-radius: 50%;
+  background: linear-gradient(
+    45deg,
+    var(--orange-main),
+    var(--orange-soft)
+  );
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.profile-story-wrapper img {
+  display: block;
+  border-radius: 50%;
+  background: white;
+  padding: 3px;
+}
+
+.profile-story-wrapper:hover {
+  transform: scale(1.05);
+}
+
+/* ===== PROFILE INFO ===== */
 .profile-info h1 {
   font-size: 2rem;
   font-weight: 800;
@@ -92,7 +134,7 @@
   color: #444;
 }
 
-/* ===== PROFILE ACTION BUTTON ===== */
+/* ===== ACTION BUTTON ===== */
 .profile-action-form {
   margin-top: 1rem;
 }
@@ -118,58 +160,6 @@
 }
 
 /* ===== EVENTS ===== */
-.event-card {
-  position: relative;
-  height: 280px;
-  border-radius: 22px;
-  overflow: hidden;
-  background: var(--blue-dark);
-  box-shadow: 0 18px 45px rgba(0,0,0,0.25);
-  transition: all 0.35s ease;
-}
-
-.event-card img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.6s ease;
-}
-
-.event-gradient {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(34,48,92,0.95),
-    rgba(19,97,151,0.35),
-    transparent
-  );
-}
-
-.event-card h3 {
-  position: absolute;
-  bottom: 18px;
-  left: 18px;
-  right: 18px;
-  color: #fff;
-  font-weight: 700;
-}
-
-.event-card:hover {
-  transform: translateY(-6px);
-}
-
-.event-card:hover img {
-  transform: scale(1.1);
-}
-
-/* ===== MOBILE ===== */
-@media (max-width: 768px) {
-  .profile-card {
-    flex-direction: column;
-    text-align: center;
-  }
-}
 .section-header h2 {
   font-weight: 900;
   margin-bottom: 2rem;
@@ -235,5 +225,76 @@
   color: var(--blue-accent);
 }
 
+/* ===== STORY MODAL ===== */
+.story-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.9);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.story-modal-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+}
+
+.story-modal-content img {
+  width: 100%;
+  border-radius: 24px;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.7);
+}
+
+#storyModalUser {
+  position: absolute;
+  top: 14px;
+  left: 18px;
+  color: white;
+  font-weight: 700;
+}
+
+.story-close {
+  position: absolute;
+  top: 8px;
+  right: 14px;
+  background: none;
+  border: none;
+  font-size: 2.2rem;
+  color: white;
+  cursor: pointer;
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 768px) {
+  .profile-card {
+    flex-direction: column;
+    text-align: center;
+  }
+}
 </style>
+
+<script>
+const wrapper = document.querySelector(".profile-story-wrapper");
+const modal = document.getElementById("storyModal");
+const modalImg = document.getElementById("storyModalImage");
+const modalUser = document.getElementById("storyModalUser");
+const closeBtn = document.querySelector(".story-close");
+
+if (wrapper) {
+  wrapper.addEventListener("click", () => {
+    modalImg.src = wrapper.dataset.image;
+    modalUser.innerText = wrapper.dataset.username;
+    modal.style.display = "flex";
+  });
+}
+
+closeBtn.onclick = () => modal.style.display = "none";
+modal.onclick = e => {
+  if (e.target === modal) modal.style.display = "none";
+};
+</script>
+
 {% endblock %}

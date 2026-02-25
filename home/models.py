@@ -76,15 +76,23 @@ class FriendItem(models.Model):
 class Comment(models.Model):
     # with foreignkey to self so we can add replies
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='replies'
+    )
     text = models.TextField(max_length=400)
     date_submitted = models.DateTimeField(auto_now=True)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, null=True)  # null = True should be off on server
     confirmed = models.BooleanField(default=False)
 
+    # comment.replies.all()
+
     def __str__(self):
         return self.profile.user.username
     # one should be able to delete his own event's comments
-
 
 
 class Membership(models.Model):

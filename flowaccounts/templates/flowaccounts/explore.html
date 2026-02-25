@@ -26,19 +26,26 @@
 <!-- ================= RESULTS ================= -->
 <section class="container my-5">
 
-  {% if profiles %}
-  <div class="result-section">
-    <h3>Profiles</h3>
-    <div class="pill-wrapper">
-      {% for profile in profiles %}
-        <a href="{% url 'flowaccounts:profile' profile.id %}" class="modern-pill">
-          {{ profile }}
-        </a>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
+{% if profiles %}
+<div class="result-section">
+  <h3>Profiles</h3>
 
+  <div class="profile-results-grid">
+    {% for profile in profiles %}
+      <a href="{% url 'flowaccounts:profile' profile.id %}" class="profile-result-card">
+        <div class="profile-result-image">
+          <img src="{{ profile.profile_pic.url }}" alt="{{ profile.user.username }}">
+        </div>
+        <div class="profile-result-info">
+          <h4>{{ profile.user.username }}</h4>
+
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+
+</div>
+{% endif %}
 
   {% if categories %}
   <div class="result-section">
@@ -298,6 +305,63 @@
   .search-hero h1 {
     font-size: 2rem;
   }
+}
+
+/* ================= PROFILE SEARCH RESULTS ================= */
+
+.profile-results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.6rem;
+}
+
+.profile-result-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.2rem;
+  border-radius: 20px;
+  text-decoration: none;
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 18px 35px rgba(0,0,0,0.15);
+  transition: 0.35s ease;
+  color: var(--blue-dark);
+}
+
+.profile-result-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 25px 45px rgba(0,0,0,0.25);
+}
+
+.profile-result-image {
+  padding: 3px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    var(--orange-main),
+    var(--orange-soft)
+  );
+}
+
+.profile-result-image img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+  padding: 2px;
+}
+
+.profile-result-info h4 {
+  margin: 0;
+  font-weight: 800;
+}
+
+.profile-result-info p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--blue-accent);
 }
 </style>
 

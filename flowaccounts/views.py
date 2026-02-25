@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.views import View
 from .forms import *
 from .models import User, OtpCode, Profile
-from home.models import Category, Event, Friend, FriendItem
+from home.models import Category, Event, Friend, FriendItem, Story
 from datetime import datetime, date, time, timedelta
 from django.utils import timezone
 from utils import send_otp_code
@@ -184,10 +184,16 @@ class UserProfileView(View):
     def get(self, request, profile_id):
         if request.user.is_authenticated:
 
+
             profile = get_object_or_404(Profile, pk=profile_id)
 
             if request.user == profile.user:
                 return redirect('flowaccounts:my_profile')
+
+            user_story = Story.objects.filter(
+                profile=profile,
+                date_posted__gte=timezone.now() - timedelta(hours=24)
+            ).first()
 
             friend, check = Friend.objects.get_or_create(user=request.user)
             try:
@@ -214,6 +220,7 @@ class UserProfileView(View):
                 "profile": profile,
                 'status': status,
                 'events': events,
+                "user_story": user_story
             }
             return render(request, 'flowaccounts/profile.html', context)
         else:
@@ -291,7 +298,7 @@ class ExploreView(View):
 
     def get(self, request):
         # for now, we sort them by date, but later we need better algo
-        explore_events = Event.objects.filter(privacy="PU").order_by("-event_date")
+        explore_events = Event.objects.filter(privacy="event").order_by("-event_date")
         # we need to handle private events
         form = self.form_class()
         context = {

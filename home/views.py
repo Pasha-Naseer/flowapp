@@ -166,13 +166,17 @@ class EventDetailView(View):
             try:
                 friend_item = FriendItem.objects.get(friend=friend, user=request.user)
                 # we need to check if we can del the var in the beginning
-            except (ValueError, FriendItem.DoesNotExist):
-                if request.user != event.promoter:
-                    return redirect("home:home")
+            except Exception:
+                    messages.error(request, "وارد اکانت شوید")
+                    return redirect('flowaccounts:login')
             else:
                 pass
 
-        comments = Comment.objects.filter(event=event)
+        comments = Comment.objects.filter(
+            event=event,
+            confirmed=True,
+            parent__isnull=True
+        ).select_related('profile__user').prefetch_related('replies')
         try:
             membership_status = Membership.objects.get(event=event, profile=request.user.profile, to_whom=event.promoter.profile)
         except (ValueError, Membership.DoesNotExist, Exception):  # check this from polls
@@ -193,16 +197,36 @@ class EventDetailView(View):
 
     def post(self, request, category_id, event_id):
         form = self.form_class(request.POST)
+
         if form.is_valid():
             if request.user.is_authenticated:
+
                 category = get_object_or_404(Category, pk=category_id)
                 event = get_object_or_404(Event, category=category, pk=event_id)
-                comment = Comment(profile=request.user.profile, text=form.cleaned_data['text'], event=event)
-                comment.save()
-                notif = Notification(profile=event.promoter.profile, notif_text=f"{request.user.username} commented on {event.name}!", date_submitted=datetime.datetime.now())
-                notif.save()
-                messages.success(request, "کامنت شما با موفقیت ثبت شد")
+
+                parent_id = request.POST.get("parent_id")
+                parent = None
+
+                if parent_id:
+                    parent = Comment.objects.get(id=parent_id)
+
+                comment = Comment.objects.create(
+                    profile=request.user.profile,
+                    text=form.cleaned_data['text'],
+                    event=event,
+                    parent=parent,
+                    confirmed=True
+                )
+
+                Notification.objects.create(
+                    profile=event.promoter.profile,
+                    notif_text=f"{request.user.username} commented on {event.name}!",
+                    date_submitted=datetime.datetime.now()
+                )
+
+                messages.success(request, "کامنت شما ثبت شد")
                 return redirect('home:event_detail', category_id=category_id, event_id=event_id)
+
             else:
                 messages.error(request, 'برای ثبت کامنت باید وارد حساب شوید')
                 return redirect("flowaccounts:login")

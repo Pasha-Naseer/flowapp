@@ -1,0 +1,25 @@
+<div class="comment-card" style="margin-left: {{ level }}px;">
+
+  <a href="{% url 'flowaccounts:profile' comment.profile.id %}" class="comment-user">
+    {{ comment.profile.user.username }}
+  </a>
+
+  <p class="comment-text">{{ comment.text }}</p>
+  <span class="comment-date">{{ comment.date_submitted }}</span>
+
+  <button class="reply-btn" onclick="showReplyForm({{ comment.id }})">
+    Reply
+  </button>
+
+  <form method="post" id="reply-form-{{ comment.id }}" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="parent_id" value="{{ comment.id }}">
+    <textarea name="text" rows="2"></textarea>
+    <button type="submit" class="submit-btn">Send</button>
+  </form>
+
+  {% for reply in comment.replies.all %}
+      {% include "home/_comment.html" with comment=reply level=level|add:30 %}
+  {% endfor %}
+
+</div>
